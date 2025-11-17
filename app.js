@@ -1,4 +1,4 @@
-const API_URL = "https://your-project.mockapi.io/api/students"; // o'zingniki bilan almashtir
+const API_URL = "https://sizning-api-manzilingiz";
 
 const studentForm = document.getElementById("studentForm");
 const submitBtn = document.getElementById("submitBtn");
@@ -17,17 +17,25 @@ async function loadStudents() {
 
   try {
     const res = await fetch(API_URL);
+
+    if (!res.ok) {
+      throw new Error("GET xato: " + res.status);
+    }
+
     const students = await res.json();
 
     studentList.innerHTML = "";
 
     students.forEach((st) => {
       const li = document.createElement("li");
-      li.textContent = `${st.name} (${st.age} yosh) - ${st.level}`;
+
+      const infoSpan = document.createElement("span");
+      infoSpan.textContent = `${st.name} (${st.age} yosh) - ${st.level}`;
 
       // EDIT tugmasi
       const editBtn = document.createElement("button");
       editBtn.textContent = "Tahrirlash ✏️";
+      editBtn.className = "btn btn-edit";
       editBtn.addEventListener("click", () => {
         startEdit(st);
       });
@@ -35,9 +43,13 @@ async function loadStudents() {
       // DELETE tugmasi
       const delBtn = document.createElement("button");
       delBtn.textContent = "O'chirish 🗑️";
+      delBtn.className = "btn btn-delete";
       delBtn.addEventListener("click", () => deleteStudent(st.id));
 
-      li.append(" ", editBtn, " ", delBtn);
+      const btnWrapper = document.createElement("div");
+      btnWrapper.append(editBtn, delBtn);
+
+      li.append(infoSpan, btnWrapper);
       studentList.appendChild(li);
     });
   } catch (err) {
@@ -48,37 +60,80 @@ async function loadStudents() {
 
 // --- POST: yangi student yaratish ---
 async function createStudent(name, age, level) {
-  await fetch(API_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ name, age, level }),
-  });
+  try {
+    const res = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, age: Number(age), level }),
+    });
 
-  loadStudents();
+    if (!res.ok) {
+      const text = await res.text();
+      console.error("POST xato:", res.status, text);
+      alert("Yangi student yaratishda xato bo'ldi");
+      return;
+    }
+
+    await loadStudents();
+  } catch (err) {
+    console.error(err);
+    alert("Server bilan bog'lanishda xato (POST)");
+  }
 }
 
 // --- DELETE: studentni o'chirish ---
 async function deleteStudent(id) {
-  await fetch(`${API_URL}/${id}`, {
-    method: "DELETE",
-  });
+  try {
+    const res = await fetch(`${API_URL}/${id}`, {
+      method: "DELETE",
+    });
 
-  loadStudents();
+    if (!res.ok) {
+      const text = await res.text();
+      console.error("DELETE xato:", res.status, text);
+      alert("O'chirishda xato bo'ldi");
+      return;
+    }
+
+    await loadStudents();
+  } catch (err) {
+    console.error(err);
+    alert("Server bilan bog'lanishda xato (DELETE)");
+  }
 }
 
-// --- UPDATE: studentni yangilash (PATCH) ---
+// --- UPDATE: studentni yangilash (PUT) ---
 async function updateStudent(id, updatedData) {
-  await fetch(`${API_URL}/${id}`, {
-    method: "PATCH", // xohlasang PUT ham bo'ladi
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(updatedData),
-  });
+  console.log("UPDATE chaqirildi, id:", id, "data:", updatedData);
 
-  loadStudents();
+  try {
+    const res = await fetch(`${API_URL}/${id}`, {
+      method: "PUT", // PATCH o'rniga PUT, CORS uchun
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(updatedData),
+    });
+
+    if (!res.ok) {
+      const text = await res.text();
+      console.error("PUT xato:", res.status, text);
+      alert("Yangilashda xato bo'ldi");
+      return;
+    }
+
+    const data = await res.json();
+    console.log("Yangilangan student:", data);
+
+    await loadStudents();
+  } catch (err) {
+    console.error(err);
+    alert("Server bilan bog'lanishda xato (PUT)");
+  }
 }
 
 // Tahrirlashni boshlash: formga ma'lumotlarni joylash
 function startEdit(student) {
+  console.log("Tahrirlash boshlandi:", student);
+
   editingId = student.id;
   nameInput.value = student.name;
   ageInput.value = student.age;
@@ -98,13 +153,17 @@ studentForm.addEventListener("submit", (e) => {
     return alert("Iltimos, barcha maydonlarni to'ldiring 🙂");
   }
 
-  // Agar editingId bor bo'lsa → UPDATE
   if (editingId) {
-    updateStudent(editingId, { name, age, level });
+    // UPDATE rejimi
+    updateStudent(editingId, {
+      name,
+      age: Number(age),
+      level,
+    });
     editingId = null;
     submitBtn.textContent = "Qo'shish ➕";
   } else {
-    // Aks holda → CREATE
+    // CREATE rejimi
     createStudent(name, age, level);
   }
 
