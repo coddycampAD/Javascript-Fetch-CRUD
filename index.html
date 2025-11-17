@@ -3,18 +3,29 @@
   <head>
     <meta charset="UTF-8" />
     <title>Student CRUD (MockAPI)</title>
+    <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <h1>O'quvchilar ro'yxati 🎓</h1>
+    <div class="container">
+      <h1>O'quvchilar ro'yxati 🎓</h1>
 
-    <form id="studentForm">
-      <input id="name" type="text" placeholder="Ism" />
-      <input id="age" type="number" placeholder="Yosh" />
-      <input id="level" type="text" placeholder="Daraja (Beginner, Junior...)" />
-      <button id="submitBtn" type="submit">Qo'shish ➕</button>
-    </form>
+      <form id="studentForm" class="card form-card">
+        <div class="field-group">
+          <input id="name" type="text" placeholder="Ism" />
+          <input id="age" type="number" placeholder="Yosh" />
+          <input
+            id="level"
+            type="text"
+            placeholder="Daraja (Beginner, Junior...)"
+          />
+        </div>
+        <button id="submitBtn" type="submit" class="btn btn-primary">
+          Qo'shish ➕
+        </button>
+      </form>
 
-    <ul id="studentList"></ul>
+      <ul id="studentList" class="list"></ul>
+    </div>
 
     <script src="app.js"></script>
   </body>
